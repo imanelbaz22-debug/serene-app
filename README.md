@@ -1,7 +1,5 @@
 # Serene - Your AI Mental Wellness Companion 🌿✨
 
-![Serene Dashboard](https://github.com/imanelbaz22-debug/serene-app/blob/main/docs/dashboard-preview.png?raw=true)
-*(Replace this link with an actual screenshot of your dashboard if available)*
 
 Serene is a modern mental wellness application designed to help you track your mood, gain deeper insights into your well-being, and find balance through AI-powered journaling.
 
