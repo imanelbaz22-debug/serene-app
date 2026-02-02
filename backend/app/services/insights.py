@@ -25,33 +25,60 @@ def analyze_checkin(checkin: CheckIn):
     # We analyze text even if mood is okay, but prioritize it if mood is low.
     text = (checkin.text or "").lower()
     
+    import re
+    def contains_word(text, words):
+        # Create a regex pattern to match any of the words as whole words
+        pattern = r'\b(?:' + '|'.join(re.escape(word) for word in words) + r')\b'
+        return bool(re.search(pattern, text))
+
     # Relationship Advice
-    if any(word in text for word in ["fight", "argument", "partner", "wife", "husband", "boyfriend", "girlfriend", "breakup", "ex"]):
+    # Relationship Advice Logic Refinement
+    # Split keywords into entities and conflict indicators to avoid false positives
+    RELATIONSHIP_ENTITIES = ["partner", "wife", "husband", "boyfriend", "girlfriend", "spouse", "fiance"]
+    CONFLICT_INDICATORS = ["fight", "argument", "conflict", "clash", "disagreement", "mad", "angry", "annoyed"]
+    RELATIONSHIP_CRISES = ["breakup", "ex", "divorce", "separated", "broken up"]
+
+    def has_relationship_stress():
+        # 1. Immediate crisis keywords always trigger
+        if contains_word(text, RELATIONSHIP_CRISES):
+            return True
+        
+        # 2. Entity + (Conflict Word OR Low Mood)
+        has_entity = contains_word(text, RELATIONSHIP_ENTITIES)
+        if has_entity:
+            has_conflict = contains_word(text, CONFLICT_INDICATORS)
+            # If explicit conflict word is present, or mood is low (<=4) while mentioning partner
+            if has_conflict or checkin.mood <= 4:
+                return True
+        
+        return False
+
+    if has_relationship_stress():
         reasons.append("Relationship conflict or strain")
         tips.append("RELATIONSHIP SOS: If emotions are high, take a strict 20-minute timeout to let stress hormones drop before talking again. When you resume, use 'I statements' ('I feel hurt when...') rather than accusations ('You always...'). This reduces defensiveness.")
 
     # Work/Career
-    elif any(word in text for word in ["work", "job", "project", "boss", "deadline", "career"]):
+    elif contains_word(text, ["work", "job", "project", "boss", "deadline", "career"]):
         reasons.append("Work-related pressure")
         tips.append("WORK FOCUS: Use the Eisenhower Matrix to sort tasks: do what is 'Urgent & Important' first. For everything else, schedule it or delegate it. Block time for 'deep work' (no notifications) to reduce the anxiety of multitasking.")
 
     # Academic/School
-    elif any(word in text for word in ["exam", "study", "school", "grade", "test", "homework"]):
+    elif contains_word(text, ["exam", "study", "school", "grade", "test", "homework"]):
         reasons.append("Academic stress")
         tips.append("STUDY HACK: Passive re-reading is inefficient. Use 'Active Recall'—test yourself on the material without looking. combine this with the Pomodoro technique (25min work, 5min break) to maintain peak cognitive performance.")
 
     # Loneliness/Social
-    elif any(word in text for word in ["lonely", "alone", "isolated", "sad", "miss"]):
+    elif contains_word(text, ["lonely", "alone", "isolated", "sad", "miss"]):
         reasons.append("Social isolation")
         tips.append("CONNECTION: Social pain lights up the same brain regions as physical pain. Call (don't text) a friend or family member for just 5 minutes. Hearing a voice releases oxytocin which lowers cortisol.")
 
     # Financial (New)
-    elif any(word in text for word in ["money", "debt", "rent", "bill", "expensive", "cost"]):
+    elif contains_word(text, ["money", "debt", "rent", "bill", "expensive", "cost"]):
         reasons.append("Financial anxiety")
         tips.append("FINANCE: Anxiety comes from uncertainty. Take 10 minutes today to just *list* your expenses. You don't need to solve it today, but accurately naming the problem reduces the brain's fear response.")
 
     # Health/Body
-    elif any(word in text for word in ["sick", "pain", "headache", "tired", "body"]):
+    elif contains_word(text, ["sick", "pain", "headache", "tired", "body"]):
         reasons.append("Physical discomfort")
         tips.append("Listen to your body. If you are in pain/sickness, your mood will naturally drop. Do not push through. Rest is productive when it heals you.")
 
